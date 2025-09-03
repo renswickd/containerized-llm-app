@@ -2,4 +2,3 @@ uvicorn
 python-dotenv
 fastapi
 pydantic
-urllib3
