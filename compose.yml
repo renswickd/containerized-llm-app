@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: fastapi-web
+    # Bind mount for hot-reload during development
+    volumes:
+      - ./app:/code/app
+    environment:
+      # The API will call Ollama by this DNS name inside the Docker network
+      OLLAMA_API_URL: http://ollama:11434/api/generate
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-smollm2:latest}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+    networks:
+      - dev-net
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    container_name: ollama
+    environment:
+      # Make sure the daemon listens on all interfaces inside the container
+      OLLAMA_HOST: 0.0.0.0
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-smollm2:latest}
+    ports:
+      - "11434:11434"
+    # Persist models across rebuilds/restarts
+    volumes:
+      - ollama-models:/root/.ollama
+    entrypoint: ["/usr/bin/bash", "/pull-model.sh"]
+    networks:
+      - dev-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+networks:
+  dev-net:
+    driver: bridge
+
+volumes:
+  ollama-models:
+    driver: local
