@@ -1,0 +1,12 @@
+# root .dockerignore
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.DS_Store
+**/.venv/
+**/venv/
+.git
